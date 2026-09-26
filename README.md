@@ -2,7 +2,7 @@
 
 **StockSense** is a smart, real-time inventory management system built for speed and precision. It allows warehouse operators and managers to easily track stock, manage deliveries and receipts, view moving history, and orchestrate internal transfers all in one intuitive interface.
 
-## 🚀 Features
+##  Features
 
 - **Telemetry Overview (Dashboard)**: High-level analytics and real-time insights into inventory levels.
 - **Stock / Catalog**: Manage products, check stock levels across different warehouse locations, and view low/out-of-stock items.
@@ -15,7 +15,7 @@
 - **Warehouse Config**: Setup locations, categories, and system parameters.
 - **Authentication**: JWT-based secure access for various operator roles.
 
-## 💻 Tech Stack
+##  Tech Stack
 
 ### Backend
 - **Framework**: [FastAPI](https://fastapi.tiangolo.com/) (Python 3)
@@ -30,7 +30,7 @@
 - **Form Handling & Validation**: React Hook Form with Zod
 - **Icons**: Lucide React
 
-## 🛠️ Project Structure
+##  Project Structure
 
 ```text
 odoohackathon/
@@ -51,7 +51,7 @@ odoohackathon/
     └── vite.config.ts    # Vite configuration
 ```
 
-## 🏁 Quick Start
+##  Quick Start
 
 ### 1. Prerequisites
 - **Python 3.9+**
@@ -96,5 +96,5 @@ npm run dev
 # Runs on http://localhost:5173
 ```
 
-## 🤝 Contributing
+##  Contributing
 Contributions are welcome. Please open an issue or submit a pull request with any improvements.
