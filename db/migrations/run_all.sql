@@ -29,4 +29,7 @@
 \echo '==> 0007 seed'
 \i db/migrations/0007_seed.sql
 
+\echo '==> 0008 password_resets'
+\i db/migrations/0008_password_resets.sql
+
 \echo '==> All migrations complete.'

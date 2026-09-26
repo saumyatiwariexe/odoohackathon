@@ -21,11 +21,11 @@ ON CONFLICT DO NOTHING;
 -- ─────────────────────────────────────────────────────────
 -- Default Locations for Main Warehouse
 -- ─────────────────────────────────────────────────────────
-INSERT INTO locations (warehouse_id, name, short_code, usage) VALUES
-    ('10000000-0000-0000-0000-000000000001', 'Input Zone',   'Input',   'internal'),
-    ('10000000-0000-0000-0000-000000000001', 'Quality Zone', 'Quality', 'internal'),
-    ('10000000-0000-0000-0000-000000000001', 'Stock',        'Stock',   'internal'),
-    ('10000000-0000-0000-0000-000000000001', 'Output Zone',  'Output',  'internal')
+INSERT INTO locations (id, warehouse_id, name, short_code, usage) VALUES
+    ('00000000-0000-0000-0000-100000000001', '10000000-0000-0000-0000-000000000001', 'Input Zone',   'Input',   'internal'),
+    ('00000000-0000-0000-0000-100000000002', '10000000-0000-0000-0000-000000000001', 'Quality Zone', 'Quality', 'internal'),
+    ('00000000-0000-0000-0000-100000000003', '10000000-0000-0000-0000-000000000001', 'Stock',        'Stock',   'internal'),
+    ('00000000-0000-0000-0000-100000000004', '10000000-0000-0000-0000-000000000001', 'Output Zone',  'Output',  'internal')
 ON CONFLICT DO NOTHING;
 
 -- ─────────────────────────────────────────────────────────

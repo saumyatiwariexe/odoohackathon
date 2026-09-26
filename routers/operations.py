@@ -111,11 +111,15 @@ def create_operation(move: MoveCreate, db=Depends(get_db)):
         
     try:
         with db.cursor() as cur:
-            # 1. Generate reference
+            # 1. Validate move_type and Generate reference
+            prefix_map = {"receipt": "IN", "delivery": "OUT", "internal": "INT", "adjustment": "ADJ"}
+            if move.move_type not in prefix_map:
+                raise HTTPException(status_code=400, detail="Invalid move type")
+            
+            prefix = prefix_map[move.move_type]
             seq_name = f"seq_move_{move.move_type}"
             cur.execute(f"SELECT nextval('{seq_name}')")
             seq_val = cur.fetchone()["nextval"]
-            prefix = {"receipt": "IN", "delivery": "OUT", "internal": "INT", "adjustment": "ADJ"}[move.move_type]
             reference = f"{prefix}-{str(seq_val).zfill(5)}"
             
             # 2. Insert move

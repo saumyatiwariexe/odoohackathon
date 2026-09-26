@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { Plus, ArrowRightLeft, ArrowDownToLine, ArrowUpFromLine, Settings2, CheckCircle2 } from 'lucide-react';
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 const fetchOperations = async (type: string) => {
@@ -15,7 +15,15 @@ const fetchOperations = async (type: string) => {
 
 export default function OperationsPage() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('receipt');
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState(location.state?.tab || 'receipt');
+
+  // Update tab if location state changes
+  useEffect(() => {
+    if (location.state?.tab) {
+      setActiveTab(location.state.tab);
+    }
+  }, [location.state?.tab]);
 
   const { data: operations, isLoading, refetch } = useQuery({
     queryKey: ['operations', activeTab],

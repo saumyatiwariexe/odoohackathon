@@ -7,6 +7,7 @@ from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from auth.login import login
 from auth.signup import signup
+from auth.password_reset import forgot_password, reset_password
 from routers.catalog import router as catalog_router
 from routers.dashboard import router as dashboard_router
 from routers.operations import router as operations_router
@@ -46,6 +47,14 @@ class SignupData(BaseModel):
     full_name: str
     role: str = "staff"
 
+class ForgotPasswordData(BaseModel):
+    email: EmailStr
+
+class ResetPasswordData(BaseModel):
+    email: EmailStr
+    otp: str
+    new_password: str
+
 @app.post("/api/auth/login")
 @limiter.limit("5/minute")  
 def user_login(request: Request, data: LoginData):
@@ -55,3 +64,13 @@ def user_login(request: Request, data: LoginData):
 @app.post("/api/auth/register")
 def user_signup(data: SignupData):
     return signup(data.email, data.password, data.full_name, data.role)
+
+@app.post("/api/auth/forgot-password")
+@limiter.limit("5/minute")
+def user_forgot_password(request: Request, data: ForgotPasswordData):
+    return forgot_password(data.email)
+
+@app.post("/api/auth/reset-password")
+@limiter.limit("5/minute")
+def user_reset_password(request: Request, data: ResetPasswordData):
+    return reset_password(data.email, data.otp, data.new_password)

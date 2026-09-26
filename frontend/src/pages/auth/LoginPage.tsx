@@ -128,6 +128,12 @@ export default function LoginPage() {
                 {loginErrors.password && <span className="form-error">{loginErrors.password.message}</span>}
               </div>
 
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '-0.5rem', marginBottom: '1rem' }}>
+                <a href="/forgot-password" style={{ fontSize: '0.875rem', color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 500 }}>
+                  Forgot password?
+                </a>
+              </div>
+
               <button type="submit" className="btn-primary" disabled={isLoading}>
                 {isLoading ? <Loader2 className="animate-spin" size={18} /> : 'Sign In'}
               </button>
