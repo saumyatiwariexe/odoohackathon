@@ -1,0 +1,19 @@
+{
+    "samar": {
+        "user_id": "usr_0001",
+        "username": "samar",
+        "password": "6ea960b3cc38f899b242557be3b5dc4dc88e9bb3e520927b2f2eaaa13a613754",
+        "rounds": 34,
+        "fib_check": 136,
+        "is_locked": false,
+        "role": "staff",
+        "assigned_warehouse": "Main Warehouse",
+        "permissions": [
+            "read_stock"
+        ],
+        "products_managed": [],
+        "suppliers_managed": [],
+        "orders": [],
+        "activity_log": []
+    }
+}
