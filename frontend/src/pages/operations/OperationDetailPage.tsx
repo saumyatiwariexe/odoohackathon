@@ -111,7 +111,7 @@ export default function OperationDetailPage() {
       </div>
 
       <div style={{ backgroundColor: 'var(--card-surface)', border: '1px solid var(--border-default)', borderRadius: '8px', padding: '1.5rem', marginBottom: '1.5rem' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '2rem' }}>
           <div>
             <label className="mono text-xs text-variant block" style={{ marginBottom: '4px' }}>Contact / Vendor</label>
             <div style={{ color: '#fff', fontSize: '14px' }}>{op.contact || 'N/A'}</div>

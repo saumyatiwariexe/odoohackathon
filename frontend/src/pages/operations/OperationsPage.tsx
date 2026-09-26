@@ -227,11 +227,11 @@ export default function OperationsPage() {
       </div>
       {/* New Operation Modal */}
       {isModalOpen && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
-          <div style={{ backgroundColor: 'var(--surface-container-high)', padding: '2rem', borderRadius: '12px', width: '600px', maxHeight: '90vh', overflowY: 'auto', border: '1px solid var(--border-default)' }} className="animate-fade-in">
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '1rem' }}>
+          <div style={{ backgroundColor: 'var(--surface-container-high)', padding: '2rem', borderRadius: '12px', width: '100%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto', border: '1px solid var(--border-default)' }} className="animate-fade-in">
             <h2 style={{ margin: '0 0 1.5rem 0', color: '#fff', fontSize: '18px', textTransform: 'uppercase' }}>Create {activeTab}</h2>
             
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
               <div className="form-group">
                 <label className="form-label">Source Location</label>
                 <select className="form-input" value={newOp.source_location_id} onChange={e => setNewOp({...newOp, source_location_id: e.target.value})}>

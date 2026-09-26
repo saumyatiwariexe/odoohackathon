@@ -19,6 +19,11 @@ export default function ProductsPage() {
     queryFn: fetchProducts,
   });
 
+  const { data: categoriesData } = useQuery({ 
+    queryKey: ['categories'], 
+    queryFn: async () => (await axios.get('http://localhost:8000/api/categories', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })).data 
+  });
+
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -35,6 +40,7 @@ export default function ProductsPage() {
     const data = {
       name: formData.get('name') as string,
       sku: formData.get('sku') as string,
+      category_id: formData.get('category_id') as string || null,
       uom: formData.get('uom') as string,
       initial_stock: parseFloat(formData.get('initial_stock') as string) || 0,
     };
@@ -137,8 +143,8 @@ export default function ProductsPage() {
 
       {/* New Product Modal */}
       {isModalOpen && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
-          <div style={{ backgroundColor: 'var(--surface-container-high)', padding: '2rem', borderRadius: '12px', width: '400px', border: '1px solid var(--border-default)' }} className="animate-fade-in">
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '1rem' }}>
+          <div style={{ backgroundColor: 'var(--surface-container-high)', padding: '2rem', borderRadius: '12px', width: '100%', maxWidth: '400px', maxHeight: '90vh', overflowY: 'auto', border: '1px solid var(--border-default)' }} className="animate-fade-in">
             <h2 style={{ margin: '0 0 1.5rem 0', color: '#fff', fontSize: '18px' }}>Create New Product</h2>
             <form onSubmit={handleCreateProduct} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div className="form-group">
@@ -148,6 +154,13 @@ export default function ProductsPage() {
               <div className="form-group">
                 <label className="form-label">SKU / Code</label>
                 <input type="text" className="form-input mono" name="sku" required />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Category</label>
+                <select className="form-input" name="category_id">
+                  <option value="">No Category</option>
+                  {categoriesData?.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
               </div>
               <div className="form-group">
                 <label className="form-label">Unit of Measure</label>
