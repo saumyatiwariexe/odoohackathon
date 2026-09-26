@@ -10,6 +10,8 @@ from auth.signup import signup
 from routers.catalog import router as catalog_router
 from routers.dashboard import router as dashboard_router
 from routers.operations import router as operations_router
+from routers.locations import router as locations_router
+from routers.ledger import router as ledger_router
 from fastapi.middleware.cors import CORSMiddleware
 
 limiter = Limiter(key_func=get_remote_address)
@@ -19,6 +21,8 @@ app = FastAPI(title="StockSense")
 app.include_router(catalog_router)
 app.include_router(dashboard_router)
 app.include_router(operations_router)
+app.include_router(locations_router)
+app.include_router(ledger_router)
 
 app.add_middleware(
     CORSMiddleware,
