@@ -1,80 +1,86 @@
-import json
+import os
 import bcrypt
 import jwt
-import uuid
+import psycopg2
+from psycopg2.extras import RealDictCursor
 from datetime import datetime, timedelta, timezone
-from pathlib import Path
+from dotenv import load_dotenv
+from fastapi import HTTPException
+import re
 
-DATA_DIR = Path("data") / "users"
-USERS_FILE = DATA_DIR / "users.json"
-
-JWT_SECRET = "admin"
+load_dotenv()
+JWT_SECRET = os.getenv("JWT_SECRET")
 ALGORITHM = "HS256"
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-def _load_users():
-    if not USERS_FILE.exists():
-        return {}
-    try:
-        with open(USERS_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception:
-        return {}
+if not JWT_SECRET or not DATABASE_URL:
+    raise ValueError("Missing environment variables")
 
-def _save_users(data: dict):
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
-    with open(USERS_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=4)
+def get_db_connection():
+    return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
 
-def signup(email: str, password: str, name: str = "New User", role: str = "warehouse_staff"):
+def signup(email: str, password: str, full_name: str, role: str):
     email = email.strip().lower()
+    full_name = full_name.strip()
     
-    # Spec: Enforce a minimum password policy
-    if len(password) < 8 or not any(c.isupper() for c in password) or not any(c.isdigit() for c in password):
-        return {
-            "Status": False, 
-            "Message": "Password must be >= 8 chars, mixed case, 1 number", 
-            "User": None
-        }
+    # Validation
+    if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+        raise HTTPException(status_code=400, detail="Invalid email format")
+        
+    if len(full_name) < 2 or len(full_name) > 100:
+        raise HTTPException(status_code=400, detail="Name must be between 2 and 100 characters")
+        
+    if role not in ["manager", "staff"]:
+        raise HTTPException(status_code=400, detail="Role must be manager or staff")
+        
+    # Strict password policy
+    if len(password) < 8 or not any(c.isupper() for c in password) or not any(c.isdigit() for c in password) or not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
+        raise HTTPException(status_code=400, detail="Password must be >= 8 chars, 1 uppercase, 1 number, 1 special character")
 
-    users = _load_users()
-
-    # Spec: Uniqueness check
-    if email in users:
-        return {"Status": False, "Message": "Email already registered", "User": None}
-
-    # Spec: bcrypt hash with cost factor 12
-    salt = bcrypt.gensalt(rounds=12)
-    password_hash = bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
-
-    # Spec: Insert users row (to JSON here)
-    user_id = str(uuid.uuid4())
-    users[email] = {
-        "id": user_id,
-        "name": name,
-        "email": email,
-        "password_hash": password_hash,
-        "role": role,
-        "created_at": datetime.now(timezone.utc).isoformat()
-    }
-    _save_users(users)
-
-    # Spec: Issue tokens
-    expire = datetime.now(timezone.utc) + timedelta(minutes=15)
-    payload = {
-        "sub": user_id,
-        "role": role,
-        "exp": expire,
-        "iat": datetime.now(timezone.utc)
-    }
-    access_token = jwt.encode(payload, JWT_SECRET, algorithm=ALGORITHM)
-
-    return {
-        "Status": True,
-        "Message": "Account created successfully",
-        "User": {
-            "id": user_id,
-            "email": email,
-            "role": role,
-            "access_token": access_token
-        }
-    }
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            # Uniqueness check
+            cur.execute("SELECT id FROM users WHERE email = %s", (email,))
+            if cur.fetchone():
+                raise HTTPException(status_code=409, detail="Email already registered")
+                
+            # Hash password
+            salt = bcrypt.gensalt(rounds=12)
+            password_hash = bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
+            
+            # Insert
+            cur.execute("""
+                INSERT INTO users (email, full_name, password_hash, role)
+                VALUES (%s, %s, %s, %s)
+                RETURNING id, email, role
+            """, (email, full_name, password_hash, role))
+            
+            new_user = cur.fetchone()
+            conn.commit()
+            
+            # Issue tokens
+            expire_minutes = int(os.getenv("JWT_ACCESS_EXPIRE_MINUTES", "1440"))
+            expire = datetime.now(timezone.utc) + timedelta(minutes=expire_minutes)
+            payload = {
+                "sub": str(new_user["id"]),
+                "role": new_user["role"],
+                "exp": expire,
+                "iat": datetime.now(timezone.utc)
+            }
+            access_token = jwt.encode(payload, JWT_SECRET, algorithm=ALGORITHM)
+            
+            return {
+                "message": "Account created successfully",
+                "user": {
+                    "id": str(new_user["id"]),
+                    "email": new_user["email"],
+                    "role": new_user["role"]
+                },
+                "access_token": access_token
+            }
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        conn.close()

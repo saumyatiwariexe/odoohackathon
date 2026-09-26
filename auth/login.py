@@ -1,62 +1,72 @@
-import json
+import os
 import bcrypt
 import jwt
+import psycopg2
+from psycopg2.extras import RealDictCursor
 from datetime import datetime, timedelta, timezone
-from pathlib import Path
+from dotenv import load_dotenv
+from fastapi import HTTPException
 
-DATA_DIR = Path("data") / "users"
-USERS_FILE = DATA_DIR / "users.json"
-
-# In production, load this from environment variables
-JWT_SECRET = "admin"
+# Load environment variables
+load_dotenv()
+JWT_SECRET = os.getenv("JWT_SECRET")
 ALGORITHM = "HS256"
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-def _load_users():
-    if not USERS_FILE.exists():
-        return {}
-    try:
-        with open(USERS_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception:
-        return {}
+if not JWT_SECRET:
+    raise ValueError("JWT_SECRET is missing from environment variables")
+if not DATABASE_URL:
+    raise ValueError("DATABASE_URL is missing from environment variables")
+
+def get_db_connection():
+    return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
 
 def login(email: str, password: str):
     email = email.strip().lower()
-    users = _load_users()
-
-    # Spec: Generic error to prevent account enumeration
-    if email not in users:
-        return {"Status": False, "Message": "Invalid email or password", "User": None}
-
-    user = users[email]
-    stored_hash = user.get("password_hash", "")
-
-    # Spec: bcrypt.compare(enteredPassword, storedHash)
+    
+    conn = get_db_connection()
     try:
-        is_valid = bcrypt.checkpw(password.encode('utf-8'), stored_hash.encode('utf-8'))
-    except ValueError:
-        is_valid = False
-
-    if not is_valid:
-        return {"Status": False, "Message": "Invalid email or password", "User": None}
-
-    # Spec: Issue tokens (JWT)
-    expire = datetime.now(timezone.utc) + timedelta(minutes=15)
-    payload = {
-        "sub": user.get("id"),
-        "role": user.get("role"),
-        "exp": expire,
-        "iat": datetime.now(timezone.utc)
-    }
-    access_token = jwt.encode(payload, JWT_SECRET, algorithm=ALGORITHM)
-
-    return {
-        "Status": True,
-        "Message": "Login successful",
-        "User": {
-            "id": user.get("id"),
-            "email": email,
-            "role": user.get("role"),
+        with conn.cursor() as cur:
+            cur.execute("SELECT id, email, password_hash, role, is_active FROM users WHERE email = %s", (email,))
+            user = cur.fetchone()
+            
+        if not user:
+            # Generic error to prevent enumeration
+            raise HTTPException(status_code=401, detail="Invalid email or password")
+            
+        if not user["is_active"]:
+            raise HTTPException(status_code=403, detail="Account deactivated")
+            
+        stored_hash = user["password_hash"]
+        
+        # Verify password
+        try:
+            is_valid = bcrypt.checkpw(password.encode('utf-8'), stored_hash.encode('utf-8'))
+        except ValueError:
+            is_valid = False
+            
+        if not is_valid:
+            raise HTTPException(status_code=401, detail="Invalid email or password")
+            
+        # Issue token
+        expire_minutes = int(os.getenv("JWT_ACCESS_EXPIRE_MINUTES", "1440"))
+        expire = datetime.now(timezone.utc) + timedelta(minutes=expire_minutes)
+        payload = {
+            "sub": str(user["id"]),
+            "role": user["role"],
+            "exp": expire,
+            "iat": datetime.now(timezone.utc)
+        }
+        access_token = jwt.encode(payload, JWT_SECRET, algorithm=ALGORITHM)
+        
+        return {
+            "message": "Login successful",
+            "user": {
+                "id": str(user["id"]),
+                "email": user["email"],
+                "role": user["role"]
+            },
             "access_token": access_token
         }
-    }
+    finally:
+        conn.close()
