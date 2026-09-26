@@ -38,7 +38,7 @@ services:
     restart: unless-stopped
     ports:
       - "1025:1025"    # SMTP — used by backend to send OTP emails
-      - "8025:8025"    # Web UI — view sent emails at http://localhost:8025
+      - "8025:8025"    # Web UI — view  to send emails at http://localhost:8025
 
 volumes:
   pgdata:

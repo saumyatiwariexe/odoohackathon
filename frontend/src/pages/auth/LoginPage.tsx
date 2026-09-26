@@ -2,86 +2,57 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Mail, Lock, Loader2, PackageSearch, User } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { Mail, Lock, User, Loader2 } from 'lucide-react';
 
 const loginSchema = z.object({
-  email: z.string().min(1, 'Email is required').email('Enter a valid email address'),
+  email: z.string().min(1, 'Email is required').email('Enter a valid email'),
   password: z.string().min(1, 'Password is required'),
 });
 
 const signupSchema = z.object({
   full_name: z.string().min(2, 'Name must be at least 2 characters'),
-  email: z.string().min(1, 'Email is required').email('Enter a valid email address'),
-  password: z.string()
-    .min(8, 'Password must be at least 8 characters')
-    .regex(/[A-Z]/, 'Must contain at least 1 uppercase letter')
-    .regex(/[0-9]/, 'Must contain at least 1 number')
-    .regex(/[^A-Za-z0-9]/, 'Must contain at least 1 special character'),
+  email: z.string().min(1, 'Email is required').email('Enter a valid email'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
 });
 
-type LoginFormValues = z.infer<typeof loginSchema>;
-type SignupFormValues = z.infer<typeof signupSchema>;
+type LoginValues = z.infer<typeof loginSchema>;
+type SignupValues = z.infer<typeof signupSchema>;
 
 export default function LoginPage() {
-  const [isLogin, setIsLogin] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
+  const [mode, setMode] = useState<'login' | 'signup'>('login');
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
-  const {
-    register: registerLogin,
-    handleSubmit: handleSubmitLogin,
-    formState: { errors: loginErrors },
-    reset: resetLogin
-  } = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
-  });
+  const loginForm = useForm<LoginValues>({ resolver: zodResolver(loginSchema) });
+  const signupForm = useForm<SignupValues>({ resolver: zodResolver(signupSchema) });
 
-  const {
-    register: registerSignup,
-    handleSubmit: handleSubmitSignup,
-    formState: { errors: signupErrors },
-    reset: resetSignup
-  } = useForm<SignupFormValues>({
-    resolver: zodResolver(signupSchema),
-  });
-
-  const onLoginSubmit = async (data: LoginFormValues) => {
-    setIsLoading(true);
+  const onLogin = async (data: LoginValues) => {
+    setLoading(true);
     try {
-      const res = await axios.post('http://localhost:3000/api/auth/login', data);
+      const res = await axios.post('http://localhost:8000/api/auth/login', data);
       localStorage.setItem('token', res.data.access_token);
-      toast.success('Welcome back to StockSense!');
-      console.log('Login success:', res.data);
-      window.location.href = '/dashboard';
+      toast.success('System access granted');
+      navigate('/dashboard');
     } catch (err: any) {
       toast.error(err.response?.data?.detail || 'Invalid credentials');
-    } finally {
-      setIsLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
-  const onSignupSubmit = async (data: SignupFormValues) => {
-    setIsLoading(true);
+  const onSignup = async (data: SignupValues) => {
+    setLoading(true);
     try {
-      const payload = { ...data, role: 'staff' };
-      const res = await axios.post('http://localhost:3000/api/auth/register', payload);
-      toast.success('Account created successfully!');
-      console.log('Signup success:', res.data);
-      // Auto-switch to login
-      setIsLogin(true);
+      await axios.post('http://localhost:8000/api/auth/register', { ...data, role: 'manager' });
+      toast.success('Operator registered — sign in to continue');
+      setMode('login');
     } catch (err: any) {
-      toast.error(err.response?.data?.detail || 'Failed to create account');
-    } finally {
-      setIsLoading(false);
-    }
+      toast.error(err.response?.data?.detail || 'Registration failed');
+    } finally { setLoading(false); }
   };
 
-  const toggleMode = () => {
-    setIsLogin(!isLogin);
-    resetLogin();
-    resetSignup();
-  };
+  const isLogin = mode === 'login';
 
   return (
     <div className="auth-container">
@@ -97,7 +68,7 @@ export default function LoginPage() {
 
           {isLogin ? (
             /* LOGIN FORM */
-            <form onSubmit={handleSubmitLogin(onLoginSubmit)}>
+            <form onSubmit={loginForm.handleSubmit(onLogin)}>
               <div className="form-group">
                 <label className="form-label" htmlFor="login-email">Email</label>
                 <div className="input-wrapper">
@@ -106,11 +77,11 @@ export default function LoginPage() {
                     id="login-email"
                     type="email"
                     placeholder="name@company.com"
-                    className={`form-input ${loginErrors.email ? 'error' : ''}`}
-                    {...registerLogin('email')}
+                    className={`form-input ${loginForm.formState.errors.email ? 'error' : ''}`}
+                    {...loginForm.register('email')}
                   />
                 </div>
-                {loginErrors.email && <span className="form-error">{loginErrors.email.message}</span>}
+                {loginForm.formState.errors.email && <span className="form-error">{loginForm.formState.errors.email.message}</span>}
               </div>
 
               <div className="form-group">
@@ -121,11 +92,11 @@ export default function LoginPage() {
                     id="login-password"
                     type="password"
                     placeholder="••••••••"
-                    className={`form-input ${loginErrors.password ? 'error' : ''}`}
-                    {...registerLogin('password')}
+                    className={`form-input ${loginForm.formState.errors.password ? 'error' : ''}`}
+                    {...loginForm.register('password')}
                   />
                 </div>
-                {loginErrors.password && <span className="form-error">{loginErrors.password.message}</span>}
+                {loginForm.formState.errors.password && <span className="form-error">{loginForm.formState.errors.password.message}</span>}
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '-0.5rem', marginBottom: '1rem' }}>
@@ -134,17 +105,13 @@ export default function LoginPage() {
                 </a>
               </div>
 
-              <button type="submit" className="btn-primary" disabled={isLoading}>
-                {isLoading ? <Loader2 className="animate-spin" size={18} /> : 'Sign In'}
+              <button type="submit" className="btn-primary" disabled={loading}>
+                {loading ? <Loader2 className="animate-spin" size={18} /> : 'Sign In'}
               </button>
             </form>
           ) : (
             /* SIGNUP FORM */
-            <form onSubmit={handleSubmitSignup(onSignupSubmit, (errs) => {
-              if (errs.full_name) toast.error(errs.full_name.message);
-              else if (errs.email) toast.error(errs.email.message);
-              else if (errs.password) toast.error(errs.password.message);
-            })}>
+            <form onSubmit={signupForm.handleSubmit(onSignup)}>
               <div className="form-group">
                 <label className="form-label" htmlFor="full_name">Full Name</label>
                 <div className="input-wrapper">
@@ -153,11 +120,11 @@ export default function LoginPage() {
                     id="full_name"
                     type="text"
                     placeholder="John Doe"
-                    className={`form-input ${signupErrors.full_name ? 'error' : ''}`}
-                    {...registerSignup('full_name')}
+                    className={`form-input ${signupForm.formState.errors.full_name ? 'error' : ''}`}
+                    {...signupForm.register('full_name')}
                   />
                 </div>
-                {signupErrors.full_name && <span className="form-error">{signupErrors.full_name.message}</span>}
+                {signupForm.formState.errors.full_name && <span className="form-error">{signupForm.formState.errors.full_name.message}</span>}
               </div>
 
               <div className="form-group">
@@ -168,11 +135,11 @@ export default function LoginPage() {
                     id="signup-email"
                     type="email"
                     placeholder="name@company.com"
-                    className={`form-input ${signupErrors.email ? 'error' : ''}`}
-                    {...registerSignup('email')}
+                    className={`form-input ${signupForm.formState.errors.email ? 'error' : ''}`}
+                    {...signupForm.register('email')}
                   />
                 </div>
-                {signupErrors.email && <span className="form-error">{signupErrors.email.message}</span>}
+                {signupForm.formState.errors.email && <span className="form-error">{signupForm.formState.errors.email.message}</span>}
               </div>
 
               <div className="form-group">
@@ -183,39 +150,26 @@ export default function LoginPage() {
                     id="signup-password"
                     type="password"
                     placeholder="••••••••"
-                    className={`form-input ${signupErrors.password ? 'error' : ''}`}
-                    {...registerSignup('password')}
+                    className={`form-input ${signupForm.formState.errors.password ? 'error' : ''}`}
+                    {...signupForm.register('password')}
                   />
                 </div>
-                {signupErrors.password && <span className="form-error">{signupErrors.password.message}</span>}
+                {signupForm.formState.errors.password && <span className="form-error">{signupForm.formState.errors.password.message}</span>}
               </div>
 
-              <button type="submit" className="btn-primary" disabled={isLoading}>
-                {isLoading ? <Loader2 className="animate-spin" size={18} /> : 'Sign Up'}
+              <button type="submit" className="btn-primary" disabled={loading}>
+                {loading ? <Loader2 className="animate-spin" size={18} /> : 'Sign Up'}
               </button>
             </form>
           )}
 
           <div className="auth-footer">
             {isLogin ? (
-              <>Don't have an account? <button type="button" onClick={toggleMode} style={{ color: 'var(--color-primary)', fontWeight: 600 }}>Sign up</button></>
+              <>Don't have an account? <button type="button" onClick={() => setMode('signup')} style={{ color: 'var(--color-primary)', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>Sign up</button></>
             ) : (
-              <>Already have an account? <button type="button" onClick={toggleMode} style={{ color: 'var(--color-primary)', fontWeight: 600 }}>Sign in</button></>
+              <>Already have an account? <button type="button" onClick={() => setMode('login')} style={{ color: 'var(--color-primary)', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>Sign in</button></>
             )}
           </div>
-        </div>
-      </div>
-
-      {/* Right side - Branding */}
-      <div className="auth-right">
-        <div style={{ position: 'relative', zIndex: 10 }}>
-          <PackageSearch size={80} color="#F1F3F9" style={{ marginBottom: '2rem' }} />
-          <h2 style={{ fontSize: '2.5rem', fontWeight: 700, marginBottom: '1rem', color: '#fff' }}>
-            StockSense
-          </h2>
-          <p style={{ color: '#EEF1FE', fontSize: '1.125rem', opacity: 0.9, maxWidth: '400px' }}>
-            The smart, real-time inventory management system built for speed and precision.
-          </p>
         </div>
       </div>
     </div>
