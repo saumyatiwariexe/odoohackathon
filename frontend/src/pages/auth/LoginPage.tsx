@@ -7,194 +7,224 @@ import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 
 const loginSchema = z.object({
-  email: z.string().min(1, 'Email is required').email('Enter a valid email address'),
+  email: z.string().min(1, 'Email is required').email('Enter a valid email'),
   password: z.string().min(1, 'Password is required'),
 });
 
 const signupSchema = z.object({
   full_name: z.string().min(2, 'Name must be at least 2 characters'),
-  email: z.string().min(1, 'Email is required').email('Enter a valid email address'),
+  email: z.string().min(1, 'Email is required').email('Enter a valid email'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
 });
 
-type LoginFormValues = z.infer<typeof loginSchema>;
-type SignupFormValues = z.infer<typeof signupSchema>;
+type LoginValues = z.infer<typeof loginSchema>;
+type SignupValues = z.infer<typeof signupSchema>;
 
 export default function LoginPage() {
-  const [isLogin, setIsLogin] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
+  const [mode, setMode] = useState<'login' | 'signup'>('login');
+  const [loading, setLoading] = useState(false);
+  const [showPass, setShowPass] = useState(false);
   const navigate = useNavigate();
 
-  const { register: registerLogin, handleSubmit: handleSubmitLogin, formState: { errors: loginErrors } } = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
-  });
+  const loginForm = useForm<LoginValues>({ resolver: zodResolver(loginSchema) });
+  const signupForm = useForm<SignupValues>({ resolver: zodResolver(signupSchema) });
 
-  const { register: registerSignup, handleSubmit: handleSubmitSignup, formState: { errors: signupErrors } } = useForm<SignupFormValues>({
-    resolver: zodResolver(signupSchema),
-  });
-
-  const onLoginSubmit = async (data: LoginFormValues) => {
-    setIsLoading(true);
+  const onLogin = async (data: LoginValues) => {
+    setLoading(true);
     try {
       const res = await axios.post('http://localhost:8000/api/auth/login', data);
       localStorage.setItem('token', res.data.access_token);
-      toast.success('System accessed successfully');
+      toast.success('System access granted');
       navigate('/dashboard');
     } catch (err: any) {
       toast.error(err.response?.data?.detail || 'Invalid credentials');
-    } finally {
-      setIsLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
-  const onSignupSubmit = async (data: SignupFormValues) => {
-    setIsLoading(true);
+  const onSignup = async (data: SignupValues) => {
+    setLoading(true);
     try {
-      const payload = { ...data, role: 'manager' };
-      await axios.post('http://localhost:8000/api/auth/register', payload);
-      toast.success('Terminal operator registered');
-      setIsLogin(true);
+      await axios.post('http://localhost:8000/api/auth/register', { ...data, role: 'manager' });
+      toast.success('Operator registered — sign in to continue');
+      setMode('login');
     } catch (err: any) {
       toast.error(err.response?.data?.detail || 'Registration failed');
-    } finally {
-      setIsLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
+  const isLogin = mode === 'login';
+
   return (
-    <div className="auth-layout">
-      <header className="auth-header">
-        <div className="flex items-center gap-sm">
-          <span className="mono text-sm uppercase" style={{ fontWeight: 'bold' }}>STOCKSENSE</span>
-          <span className="mono text-xs text-variant">// SYS.AUTH</span>
+    <div className="auth-shell">
+      {/* Top Bar */}
+      <header className="auth-topbar">
+        <div className="flex items-center gap-md">
+          <span className="mono text-sm uppercase" style={{ fontWeight: 700, letterSpacing: '0.08em' }}>STOCKSENSE</span>
+          <span className="mono text-xs text-neutral">// SYS.AUTH</span>
+          <div className="flex items-center gap-xs" style={{ marginLeft: 'var(--space-md)', color: 'var(--neutral)' }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--on-surface)', display: 'inline-block' }} />
+            <span className="mono text-xs uppercase" style={{ letterSpacing: '0.06em' }}>NODE: 0x82F1 // CLUSTER-OK</span>
+          </div>
         </div>
-        <div className="flex items-center gap-sm mono text-xs text-variant">
-          <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>lock</span>
-          <span>TLS 1.3 / E2EE</span>
+        <div className="flex items-center gap-lg">
+          <div className="flex items-center gap-xs text-sm" style={{ color: 'var(--on-surface)' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 15 }}>lock</span>
+            <span className="mono text-xs uppercase" style={{ letterSpacing: '0.06em' }}>TLS 1.3 / E2EE</span>
+          </div>
+          <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--surface-container-high)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>person</span>
+          </div>
         </div>
       </header>
 
-      <main className="auth-main">
-        <div className="auth-card">
-          <div>
-            <div className="flex justify-between" style={{ marginBottom: '8px' }}>
-              <span className="mono text-xs text-variant">[ {isLogin ? 'AUTH SESSION' : 'PROVISIONING SESSION'}: #8920-INIT ]</span>
-              <span className="mono text-xs uppercase" style={{ color: 'var(--success)' }}>STATUS: ONLINE</span>
+      <div className="auth-body">
+        <div className="auth-container">
+          {/* Breadcrumb */}
+          <div className="auth-breadcrumb">
+            <div className="flex items-center gap-xs" style={{ color: 'var(--on-surface)' }}>
+              <span style={{ width: 6, height: 6, background: 'var(--on-surface)', display: 'inline-block' }} />
+              <span>FACILITY NORTH / {isLogin ? 'OPERATOR AUTHENTICATION' : 'OPERATOR ENROLLMENT'}</span>
             </div>
-            <h1 className="auth-title">{isLogin ? 'Terminal Authentication' : 'Register Terminal Operator'}</h1>
-            <p className="auth-subtitle">
-              {isLogin ? 'Provide operator credentials to access the logistics platform.' : 'Create authorized warehouse credentials and assign security clearance.'}
-            </p>
+            <div className="flex items-center gap-sm">
+              <span>SECURITY LEVEL: 04</span>
+              <span style={{ color: 'var(--outline-variant)' }}>//</span>
+              <span>PROT: {isLogin ? 'AUTH-SEC-X' : 'REG-SEC-X'}</span>
+            </div>
           </div>
 
-          {isLogin ? (
-            <form style={{ display: 'flex', flexDirection: 'column', gap: '16px' }} onSubmit={handleSubmitLogin(onLoginSubmit)}>
-              <div className="form-group">
-                <label className="form-label">
-                  <span>Operator Email</span>
-                  <span className="text-variant">SSO FEDERATED</span>
-                </label>
-                <input
-                  type="email"
-                  className="form-input"
-                  placeholder="operator@stocksense.internal"
-                  {...registerLogin('email')}
-                />
-                {loginErrors.email && <span className="form-error">{loginErrors.email.message}</span>}
+          {/* Card */}
+          <div className="auth-card">
+            {/* Card Header */}
+            <div className="flex-col" style={{ gap: 4 }}>
+              <div className="flex justify-between items-center">
+                <span className="mono text-xs text-neutral uppercase" style={{ letterSpacing: '0.08em' }}>
+                  [ {isLogin ? 'AUTH' : 'PROVISIONING'} SESSION: #8920-INIT ]
+                </span>
+                <span className="mono text-xs uppercase" style={{ color: 'var(--on-surface)', letterSpacing: '0.06em' }}>
+                  STATUS: {isLogin ? 'ONLINE' : 'UNCLAIMED'}
+                </span>
               </div>
+              <h1 style={{ fontSize: 22, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '-0.02em', color: 'var(--text-primary)', marginTop: 4 }}>
+                {isLogin ? 'Terminal Authentication' : 'Register Terminal Operator'}
+              </h1>
+              <p style={{ fontSize: 13, color: 'var(--on-surface-variant)', marginTop: 4 }}>
+                {isLogin
+                  ? 'Provide operator credentials to access the logistics platform.'
+                  : 'Create authorized warehouse credentials and assign security tier clearance.'}
+              </p>
+            </div>
 
-              <div className="form-group">
-                <label className="form-label">
-                  <span>Access Key</span>
-                </label>
-                <input
-                  type="password"
-                  className="form-input mono"
-                  placeholder="••••••••••••"
-                  {...registerLogin('password')}
-                />
-                {loginErrors.password && <span className="form-error">{loginErrors.password.message}</span>}
-              </div>
+            {/* Form */}
+            {isLogin ? (
+              <form onSubmit={loginForm.handleSubmit(onLogin)} className="flex-col" style={{ gap: 'var(--space-md)', display: 'flex', flexDirection: 'column' }}>
+                <div className="form-group">
+                  <label className="form-label">
+                    <span>OPERATOR EMAIL</span>
+                    <span className="form-label-hint">SSO FEDERATED</span>
+                  </label>
+                  <input type="email" className="form-input" placeholder="operator@stocksense.internal" {...loginForm.register('email')} />
+                  {loginForm.formState.errors.email && <span className="form-error">{loginForm.formState.errors.email.message}</span>}
+                </div>
 
-              <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
-                <button type="submit" className="btn-primary" style={{ flex: 1 }} disabled={isLoading}>
-                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>
-                    {isLoading ? 'refresh' : 'login'}
-                  </span>
-                  {isLoading ? 'AUTHENTICATING...' : 'ACCESS TERMINAL'}
-                </button>
-              </div>
-            </form>
-          ) : (
-            <form style={{ display: 'flex', flexDirection: 'column', gap: '16px' }} onSubmit={handleSubmitSignup(onSignupSubmit)}>
-              <div className="form-group">
-                <label className="form-label">
-                  <span>Operator Full Name</span>
-                  <span className="text-variant">*</span>
-                </label>
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder="e.g. Alex Vance"
-                  {...registerSignup('full_name')}
-                />
-                {signupErrors.full_name && <span className="form-error">{signupErrors.full_name.message}</span>}
-              </div>
+                <div className="form-group">
+                  <label className="form-label"><span>ACCESS KEY</span></label>
+                  <div style={{ position: 'relative' }}>
+                    <input type={showPass ? 'text' : 'password'} className="form-input mono" placeholder="••••••••••••" style={{ paddingRight: 40 }} {...loginForm.register('password')} />
+                    <button type="button" className="btn-icon" onClick={() => setShowPass(!showPass)} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)' }}>
+                      <span className="material-symbols-outlined" style={{ fontSize: 16 }}>{showPass ? 'visibility_off' : 'visibility'}</span>
+                    </button>
+                  </div>
+                  {loginForm.formState.errors.password && <span className="form-error">{loginForm.formState.errors.password.message}</span>}
+                </div>
 
-              <div className="form-group">
-                <label className="form-label">
-                  <span>Work Email Address</span>
-                  <span className="text-variant">SSO FEDERATED</span>
-                </label>
-                <input
-                  type="email"
-                  className="form-input"
-                  placeholder="a.vance@stocksense.internal"
-                  {...registerSignup('email')}
-                />
-                {signupErrors.email && <span className="form-error">{signupErrors.email.message}</span>}
-              </div>
+                <div className="flex gap-sm" style={{ marginTop: 'var(--space-sm)' }}>
+                  <button type="submit" className="btn-primary flex-1" disabled={loading}>
+                    <span className="material-symbols-outlined" style={{ fontSize: 16 }}>{loading ? 'refresh' : 'login'}</span>
+                    <span className={loading ? 'animate-spin' : ''} style={{ display: 'none' }} />
+                    {loading ? 'AUTHENTICATING...' : 'ACCESS TERMINAL'}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={signupForm.handleSubmit(onSignup)} className="flex-col" style={{ gap: 'var(--space-md)', display: 'flex', flexDirection: 'column' }}>
+                <div className="grid-2">
+                  <div className="form-group">
+                    <label className="form-label">
+                      <span>OPERATOR FULL NAME</span>
+                      <span style={{ color: 'var(--neutral)' }}>*</span>
+                    </label>
+                    <input type="text" className="form-input" placeholder="e.g. Alex Vance" {...signupForm.register('full_name')} />
+                    {signupForm.formState.errors.full_name && <span className="form-error">{signupForm.formState.errors.full_name.message}</span>}
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">
+                      <span>OPERATOR ID</span>
+                      <span className="form-label-hint">[AUTO-FORMAT]</span>
+                    </label>
+                    <input type="text" className="form-input mono" value={`OP-${Math.floor(1000 + Math.random() * 9000)}`} readOnly style={{ opacity: 0.6 }} />
+                  </div>
+                </div>
 
-              <div className="form-group">
-                <label className="form-label">
-                  <span>Master Access Key</span>
-                </label>
-                <input
-                  type="password"
-                  className="form-input mono"
-                  placeholder="••••••••••••"
-                  {...registerSignup('password')}
-                />
-                {signupErrors.password && <span className="form-error">{signupErrors.password.message}</span>}
-              </div>
+                <div className="form-group">
+                  <label className="form-label">
+                    <span>WORK EMAIL ADDRESS</span>
+                    <span className="form-label-hint">SSO FEDERATED</span>
+                  </label>
+                  <input type="email" className="form-input" placeholder="a.vance@stocksense.internal" {...signupForm.register('email')} />
+                  {signupForm.formState.errors.email && <span className="form-error">{signupForm.formState.errors.email.message}</span>}
+                </div>
 
-              <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
-                <button type="submit" className="btn-primary" style={{ flex: 1 }} disabled={isLoading}>
-                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>
-                    {isLoading ? 'refresh' : 'arrow_forward'}
-                  </span>
-                  {isLoading ? 'COMMITTING...' : 'COMPLETE REGISTRATION'}
-                </button>
-                <button type="button" className="btn-secondary" style={{ padding: '0 20px' }} onClick={() => setIsLogin(true)}>
-                  CANCEL
-                </button>
-              </div>
-            </form>
-          )}
+                <div className="form-group">
+                  <label className="form-label"><span>MASTER ACCESS KEY</span></label>
+                  <div style={{ position: 'relative' }}>
+                    <input type={showPass ? 'text' : 'password'} className="form-input mono" placeholder="••••••••••••" style={{ paddingRight: 40 }} {...signupForm.register('password')} />
+                    <button type="button" className="btn-icon" onClick={() => setShowPass(!showPass)} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)' }}>
+                      <span className="material-symbols-outlined" style={{ fontSize: 16 }}>{showPass ? 'visibility_off' : 'visibility'}</span>
+                    </button>
+                  </div>
+                  {signupForm.formState.errors.password && <span className="form-error">{signupForm.formState.errors.password.message}</span>}
+                </div>
 
-          <div className="mono text-xs flex justify-between" style={{ borderTop: '1px solid var(--border-default)', paddingTop: '16px' }}>
-            <span className="text-variant">{isLogin ? 'NEW OPERATOR?' : 'EXISTING CREDENTIALS?'}</span>
-            <button 
-              type="button" 
-              onClick={() => setIsLogin(!isLogin)} 
-              style={{ background: 'none', border: 'none', color: 'var(--on-surface)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-            >
-              {isLogin ? 'REQUEST PROVISIONING' : 'SIGN IN TO TERMINAL'} 
-              <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>arrow_right_alt</span>
-            </button>
+                {/* Password criteria */}
+                <div className="flex gap-md" style={{ background: 'var(--surface-container)', border: '1px solid rgba(52,52,58,0.3)', padding: '8px 12px', borderRadius: 'var(--radius)', flexWrap: 'wrap' }}>
+                  <span className="mono text-xs" style={{ color: 'var(--on-surface)' }}>[✓ 8+ CHARS]</span>
+                  <span className="mono text-xs" style={{ color: 'var(--on-surface)' }}>[✓ NUMERIC]</span>
+                  <span className="mono text-xs" style={{ color: 'var(--on-surface)' }}>[✓ HIGH ENTROPY]</span>
+                  <span className="mono text-xs text-neutral" style={{ marginLeft: 'auto' }}>ALGO: SHA-256</span>
+                </div>
+
+                <div className="flex gap-sm" style={{ marginTop: 'var(--space-sm)' }}>
+                  <button type="submit" className="btn-primary flex-1" disabled={loading}>
+                    <span className="material-symbols-outlined" style={{ fontSize: 16 }}>{loading ? 'refresh' : 'arrow_forward'}</span>
+                    {loading ? 'COMMITTING RECORD...' : 'COMPLETE REGISTRATION'}
+                  </button>
+                  <button type="button" className="btn-secondary" style={{ padding: '0 var(--space-lg)' }} onClick={() => setMode('login')}>
+                    CANCEL
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* Footer toggle */}
+            <div className="flex justify-between items-center mono text-xs" style={{ borderTop: '1px solid var(--border-default)', paddingTop: 'var(--space-md)' }}>
+              <span style={{ color: 'var(--neutral)' }}>{isLogin ? 'NEW OPERATOR?' : 'EXISTING CREDENTIALS?'}</span>
+              <button type="button" onClick={() => setMode(isLogin ? 'signup' : 'login')} style={{ background: 'none', border: 'none', color: 'var(--on-surface)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, textTransform: 'uppercase', letterSpacing: '0.05em', fontFamily: 'var(--font-mono)', fontSize: 10 }}>
+                {isLogin ? 'REQUEST PROVISIONING' : 'SIGN IN TO TERMINAL'}
+                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>arrow_right_alt</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Footer system status */}
+          <div className="auth-footer-bar">
+            <div className="flex items-center gap-xs mono text-xs text-neutral" style={{ letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+              <div className="live-dot" />
+              <span>ENCRYPTED AUDIT RECORD CREATED UPON CONFIRMATION</span>
+            </div>
+            <span className="mono text-xs" style={{ color: 'var(--on-surface)', letterSpacing: '0.06em' }}>NODE: BAY-04A</span>
           </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 }
