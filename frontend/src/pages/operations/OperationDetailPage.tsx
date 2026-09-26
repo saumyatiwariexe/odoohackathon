@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, Save, Printer } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Printer } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 
@@ -15,7 +15,7 @@ export default function OperationDetailPage() {
     queryKey: ['operation', id],
     queryFn: async () => {
       const token = localStorage.getItem('token');
-      const res = await axios.get(`http://localhost:3000/api/operations/${id}`, {
+      const res = await axios.get(`http://localhost:8000/api/operations/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       return res.data;
@@ -42,7 +42,7 @@ export default function OperationDetailPage() {
           done_qty: Number(done_qty)
         }))
       };
-      const res = await axios.post(`http://localhost:3000/api/operations/${id}/validate`, payload, {
+      const res = await axios.post(`http://localhost:8000/api/operations/${id}/validate`, payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
       return res.data;

@@ -3,7 +3,7 @@ import axios from 'axios';
 
 const fetchLocations = async () => {
   const token = localStorage.getItem('token');
-  const res = await axios.get('http://localhost:3000/api/locations', {
+  const res = await axios.get('http://localhost:8000/api/locations', {
     headers: { Authorization: `Bearer ${token}` }
   });
   return res.data;

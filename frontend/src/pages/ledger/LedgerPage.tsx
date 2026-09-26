@@ -4,7 +4,7 @@ import { useState } from 'react';
 
 const fetchLedger = async () => {
   const token = localStorage.getItem('token');
-  const res = await axios.get('http://localhost:3000/api/ledger', {
+  const res = await axios.get('http://localhost:8000/api/ledger', {
     headers: { Authorization: `Bearer ${token}` }
   });
   return res.data;

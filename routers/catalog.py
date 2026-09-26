@@ -31,6 +31,7 @@ class ProductCreate(BaseModel):
     cost_per_unit: Optional[float] = None
     reorder_min: float = 0
     reorder_max: float = 0
+    initial_stock: Optional[float] = 0
 
 # --- Categories ---
 
@@ -63,10 +64,13 @@ def get_products(db=Depends(get_db)):
         # We join categories to get the category name along with the product
         cur.execute("""
             SELECT p.id, p.sku, p.name, p.category_id, c.name as category_name, 
-                   p.uom, p.cost_per_unit, p.reorder_min, p.reorder_max, p.is_active
+                   p.uom, p.cost_per_unit, p.reorder_min, p.reorder_max, p.is_active,
+                   COALESCE(SUM(sq.on_hand_qty), 0) as total_stock
             FROM products p
             LEFT JOIN categories c ON p.category_id = c.id
+            LEFT JOIN stock_quants sq ON p.id = sq.product_id
             WHERE p.is_active = TRUE
+            GROUP BY p.id, c.name
             ORDER BY p.name
         """)
         return cur.fetchall()
@@ -85,6 +89,25 @@ def create_product(prod: ProductCreate, db=Depends(get_db)):
                 RETURNING id, sku, name
             """, (prod.sku, prod.name, prod.category_id, prod.uom, prod.cost_per_unit, prod.reorder_min, prod.reorder_max))
             new_prod = cur.fetchone()
+            
+            # Handle initial stock if provided
+            if prod.initial_stock and prod.initial_stock > 0:
+                # Find main internal location
+                cur.execute("SELECT id FROM locations WHERE usage = 'internal' LIMIT 1")
+                loc = cur.fetchone()
+                if loc:
+                    # Update stock_quants
+                    cur.execute("""
+                        INSERT INTO stock_quants (product_id, location_id, on_hand_qty)
+                        VALUES (%s, %s, %s)
+                    """, (new_prod['id'], loc['id'], prod.initial_stock))
+                    
+                    # Insert into ledger as adjustment (no move_id)
+                    cur.execute("""
+                        INSERT INTO stock_ledger (product_id, location_id, quantity_delta, balance_after)
+                        VALUES (%s, %s, %s, %s)
+                    """, (new_prod['id'], loc['id'], prod.initial_stock, prod.initial_stock))
+
             db.commit()
             return new_prod
     except psycopg2.IntegrityError as e:

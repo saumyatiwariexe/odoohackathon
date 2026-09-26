@@ -1,28 +1,58 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { Plus, Search, Filter } from 'lucide-react';
 import { useState } from 'react';
+import toast from 'react-hot-toast';
 
 const fetchProducts = async () => {
   const token = localStorage.getItem('token');
-  const res = await axios.get('http://localhost:3000/api/products', {
+  const res = await axios.get('http://localhost:8000/api/products', {
     headers: { Authorization: `Bearer ${token}` }
   });
   return res.data;
 };
 
 export default function ProductsPage() {
+  const queryClient = useQueryClient();
   const { data: products, isLoading, isError } = useQuery({
     queryKey: ['products'],
     queryFn: fetchProducts,
   });
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
 
   const filteredProducts = products?.filter((p: any) => 
-    p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    p.sku.toLowerCase().includes(searchTerm.toLowerCase())
+    p.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    p.sku?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleCreateProduct = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setCreating(true);
+    const formData = new FormData(e.currentTarget);
+    const data = {
+      name: formData.get('name') as string,
+      sku: formData.get('sku') as string,
+      uom: formData.get('uom') as string,
+      initial_stock: parseFloat(formData.get('initial_stock') as string) || 0,
+    };
+    
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post('http://localhost:8000/api/products', data, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success('Product created successfully');
+      setIsModalOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+    } catch (error: any) {
+      toast.error(error.response?.data?.detail || 'Failed to create product');
+    } finally {
+      setCreating(false);
+    }
+  };
 
   return (
     <div className="animate-fade-in">
@@ -31,7 +61,7 @@ export default function ProductsPage() {
           <h1 style={{ fontSize: '24px', fontWeight: 600, margin: 0, textTransform: 'uppercase', color: '#fff' }}>Product Master</h1>
           <p className="mono text-xs text-variant" style={{ marginTop: '4px' }}>MANAGE INVENTORY CATALOG & SKUs</p>
         </div>
-        <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }} onClick={() => setIsModalOpen(true)}>
           <Plus size={16} />
           <span>NEW PRODUCT</span>
         </button>
@@ -95,7 +125,7 @@ export default function ProductsPage() {
                     <td style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--color-primary)' }} className="mono text-sm">{p.sku}</td>
                     <td style={{ padding: '12px 16px', color: '#fff' }}>{p.name}</td>
                     <td style={{ padding: '12px 16px', color: 'var(--text-variant)' }} className="mono text-sm uppercase">{p.uom}</td>
-                    <td style={{ padding: '12px 16px', color: 'var(--success)' }} className="mono text-sm">${p.cost_per_unit}</td>
+                    <td style={{ padding: '12px 16px', color: 'var(--success)' }} className="mono text-sm">{p.total_stock} in stock</td>
                     <td style={{ padding: '12px 16px', color: 'var(--text-variant)' }} className="mono text-sm">{p.reorder_min} / {p.reorder_max}</td>
                   </tr>
                 ))
@@ -104,6 +134,39 @@ export default function ProductsPage() {
           </table>
         </div>
       </div>
+
+      {/* New Product Modal */}
+      {isModalOpen && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
+          <div style={{ backgroundColor: 'var(--surface-container-high)', padding: '2rem', borderRadius: '12px', width: '400px', border: '1px solid var(--border-default)' }} className="animate-fade-in">
+            <h2 style={{ margin: '0 0 1.5rem 0', color: '#fff', fontSize: '18px' }}>Create New Product</h2>
+            <form onSubmit={handleCreateProduct} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div className="form-group">
+                <label className="form-label">Product Name</label>
+                <input type="text" className="form-input" name="name" required />
+              </div>
+              <div className="form-group">
+                <label className="form-label">SKU / Code</label>
+                <input type="text" className="form-input mono" name="sku" required />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Unit of Measure</label>
+                <input type="text" className="form-input" name="uom" defaultValue="pcs" required />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Initial Stock (Optional)</label>
+                <input type="number" className="form-input mono" name="initial_stock" defaultValue="0" min="0" />
+              </div>
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                <button type="button" className="btn-secondary flex-1" onClick={() => setIsModalOpen(false)}>Cancel</button>
+                <button type="submit" className="btn-primary flex-1" disabled={creating}>
+                  {creating ? 'Creating...' : 'Create Product'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

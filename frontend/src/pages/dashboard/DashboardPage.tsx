@@ -6,7 +6,7 @@ import { Filter } from 'lucide-react';
 
 const fetchKPIs = async () => {
   const token = localStorage.getItem('token');
-  const res = await axios.get('http://localhost:3000/api/dashboard/kpis', {
+  const res = await axios.get('http://localhost:8000/api/dashboard/kpis', {
     headers: { Authorization: `Bearer ${token}` }
   });
   return res.data;
@@ -14,7 +14,7 @@ const fetchKPIs = async () => {
 
 const fetchRecentActivity = async (filters: any) => {
   const token = localStorage.getItem('token');
-  let url = 'http://localhost:3000/api/operations?';
+  let url = 'http://localhost:8000/api/operations?';
   if (filters.type && filters.type !== 'all') url += `move_type=${filters.type}&`;
   if (filters.status && filters.status !== 'all') url += `status=${filters.status}&`;
   if (filters.location_id && filters.location_id !== 'all') url += `location_id=${filters.location_id}&`;
@@ -28,7 +28,7 @@ const fetchRecentActivity = async (filters: any) => {
 
 const fetchLocations = async () => {
   const token = localStorage.getItem('token');
-  const res = await axios.get('http://localhost:3000/api/locations', {
+  const res = await axios.get('http://localhost:8000/api/locations', {
     headers: { Authorization: `Bearer ${token}` }
   });
   return res.data;
@@ -36,7 +36,7 @@ const fetchLocations = async () => {
 
 const fetchCategories = async () => {
   const token = localStorage.getItem('token');
-  const res = await axios.get('http://localhost:3000/api/categories', {
+  const res = await axios.get('http://localhost:8000/api/categories', {
     headers: { Authorization: `Bearer ${token}` }
   });
   return res.data;
