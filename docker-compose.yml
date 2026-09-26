@@ -1,0 +1,32 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:15
+    container_name: stocksense-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: stocksense
+      POSTGRES_USER: stocksense
+      POSTGRES_PASSWORD: localpass
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stocksense"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mailhog:
+    image: mailhog/mailhog
+    container_name: stocksense-mail
+    restart: unless-stopped
+    ports:
+      - "1025:1025"    # SMTP — used by backend to send OTP emails
+      - "8025:8025"    # Web UI — view sent emails at http://localhost:8025
+
+volumes:
+  pgdata:
+    driver: local
