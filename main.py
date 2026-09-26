@@ -7,10 +7,19 @@ from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from auth.login import login
 from auth.signup import signup
+from fastapi.middleware.cors import CORSMiddleware
 
 limiter = Limiter(key_func=get_remote_address)
 
 app = FastAPI(title="StockSense")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://localhost:5174"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
 app.state.limiter = limiter
