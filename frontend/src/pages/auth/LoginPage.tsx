@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { useNavigate } from 'react-router-dom';
 
 const loginSchema = z.object({
   email: z.string().min(1, 'Email is required').email('Enter a valid email'),
@@ -104,7 +104,7 @@ export default function LoginPage() {
                   STATUS: {isLogin ? 'ONLINE' : 'UNCLAIMED'}
                 </span>
               </div>
-              <h1 style={{ fontSize: 22, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '-0.02em', color: 'var(--text-primary)', marginTop: 4 }}>
+              <h1 style={{ fontSize: 22, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '-0.02em', color: 'var(--on-surface)', marginTop: 4 }}>
                 {isLogin ? 'Terminal Authentication' : 'Register Terminal Operator'}
               </h1>
               <p style={{ fontSize: 13, color: 'var(--on-surface-variant)', marginTop: 4 }}>
@@ -116,11 +116,11 @@ export default function LoginPage() {
 
             {/* Form */}
             {isLogin ? (
-              <form onSubmit={loginForm.handleSubmit(onLogin)} className="flex-col" style={{ gap: 'var(--space-md)', display: 'flex', flexDirection: 'column' }}>
+              <form onSubmit={loginForm.handleSubmit(onLogin)} style={{ gap: 'var(--space-md)', display: 'flex', flexDirection: 'column' }}>
                 <div className="form-group">
                   <label className="form-label">
                     <span>OPERATOR EMAIL</span>
-                    <span className="form-label-hint">SSO FEDERATED</span>
+                    <span style={{ color: 'var(--on-surface-variant)', fontSize: 10 }}>SSO FEDERATED</span>
                   </label>
                   <input type="email" className="form-input" placeholder="operator@stocksense.internal" {...loginForm.register('email')} />
                   {loginForm.formState.errors.email && <span className="form-error">{loginForm.formState.errors.email.message}</span>}
@@ -129,8 +129,18 @@ export default function LoginPage() {
                 <div className="form-group">
                   <label className="form-label"><span>ACCESS KEY</span></label>
                   <div style={{ position: 'relative' }}>
-                    <input type={showPass ? 'text' : 'password'} className="form-input mono" placeholder="••••••••••••" style={{ paddingRight: 40 }} {...loginForm.register('password')} />
-                    <button type="button" className="btn-icon" onClick={() => setShowPass(!showPass)} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)' }}>
+                    <input
+                      type={showPass ? 'text' : 'password'}
+                      className="form-input mono"
+                      placeholder="••••••••••••"
+                      style={{ paddingRight: 40 }}
+                      {...loginForm.register('password')}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPass(!showPass)}
+                      style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--on-surface-variant)', display: 'flex', alignItems: 'center' }}
+                    >
                       <span className="material-symbols-outlined" style={{ fontSize: 16 }}>{showPass ? 'visibility_off' : 'visibility'}</span>
                     </button>
                   </div>
@@ -140,18 +150,17 @@ export default function LoginPage() {
                 <div className="flex gap-sm" style={{ marginTop: 'var(--space-sm)' }}>
                   <button type="submit" className="btn-primary flex-1" disabled={loading}>
                     <span className="material-symbols-outlined" style={{ fontSize: 16 }}>{loading ? 'refresh' : 'login'}</span>
-                    <span className={loading ? 'animate-spin' : ''} style={{ display: 'none' }} />
                     {loading ? 'AUTHENTICATING...' : 'ACCESS TERMINAL'}
                   </button>
                 </div>
               </form>
             ) : (
-              <form onSubmit={signupForm.handleSubmit(onSignup)} className="flex-col" style={{ gap: 'var(--space-md)', display: 'flex', flexDirection: 'column' }}>
-                <div className="grid-2">
+              <form onSubmit={signupForm.handleSubmit(onSignup)} style={{ gap: 'var(--space-md)', display: 'flex', flexDirection: 'column' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-md)' }}>
                   <div className="form-group">
                     <label className="form-label">
                       <span>OPERATOR FULL NAME</span>
-                      <span style={{ color: 'var(--neutral)' }}>*</span>
+                      <span style={{ color: 'var(--on-surface-variant)' }}>*</span>
                     </label>
                     <input type="text" className="form-input" placeholder="e.g. Alex Vance" {...signupForm.register('full_name')} />
                     {signupForm.formState.errors.full_name && <span className="form-error">{signupForm.formState.errors.full_name.message}</span>}
@@ -159,7 +168,7 @@ export default function LoginPage() {
                   <div className="form-group">
                     <label className="form-label">
                       <span>OPERATOR ID</span>
-                      <span className="form-label-hint">[AUTO-FORMAT]</span>
+                      <span style={{ color: 'var(--on-surface-variant)', fontSize: 10 }}>[AUTO-FORMAT]</span>
                     </label>
                     <input type="text" className="form-input mono" value={`OP-${Math.floor(1000 + Math.random() * 9000)}`} readOnly style={{ opacity: 0.6 }} />
                   </div>
@@ -168,7 +177,7 @@ export default function LoginPage() {
                 <div className="form-group">
                   <label className="form-label">
                     <span>WORK EMAIL ADDRESS</span>
-                    <span className="form-label-hint">SSO FEDERATED</span>
+                    <span style={{ color: 'var(--on-surface-variant)', fontSize: 10 }}>SSO FEDERATED</span>
                   </label>
                   <input type="email" className="form-input" placeholder="a.vance@stocksense.internal" {...signupForm.register('email')} />
                   {signupForm.formState.errors.email && <span className="form-error">{signupForm.formState.errors.email.message}</span>}
@@ -177,8 +186,18 @@ export default function LoginPage() {
                 <div className="form-group">
                   <label className="form-label"><span>MASTER ACCESS KEY</span></label>
                   <div style={{ position: 'relative' }}>
-                    <input type={showPass ? 'text' : 'password'} className="form-input mono" placeholder="••••••••••••" style={{ paddingRight: 40 }} {...signupForm.register('password')} />
-                    <button type="button" className="btn-icon" onClick={() => setShowPass(!showPass)} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)' }}>
+                    <input
+                      type={showPass ? 'text' : 'password'}
+                      className="form-input mono"
+                      placeholder="••••••••••••"
+                      style={{ paddingRight: 40 }}
+                      {...signupForm.register('password')}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPass(!showPass)}
+                      style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--on-surface-variant)', display: 'flex', alignItems: 'center' }}
+                    >
                       <span className="material-symbols-outlined" style={{ fontSize: 16 }}>{showPass ? 'visibility_off' : 'visibility'}</span>
                     </button>
                   </div>
@@ -186,7 +205,7 @@ export default function LoginPage() {
                 </div>
 
                 {/* Password criteria */}
-                <div className="flex gap-md" style={{ background: 'var(--surface-container)', border: '1px solid rgba(52,52,58,0.3)', padding: '8px 12px', borderRadius: 'var(--radius)', flexWrap: 'wrap' }}>
+                <div className="flex gap-md" style={{ background: 'var(--surface-container)', border: '1px solid rgba(52,52,58,0.3)', padding: '8px 12px', flexWrap: 'wrap' }}>
                   <span className="mono text-xs" style={{ color: 'var(--on-surface)' }}>[✓ 8+ CHARS]</span>
                   <span className="mono text-xs" style={{ color: 'var(--on-surface)' }}>[✓ NUMERIC]</span>
                   <span className="mono text-xs" style={{ color: 'var(--on-surface)' }}>[✓ HIGH ENTROPY]</span>
@@ -207,8 +226,12 @@ export default function LoginPage() {
 
             {/* Footer toggle */}
             <div className="flex justify-between items-center mono text-xs" style={{ borderTop: '1px solid var(--border-default)', paddingTop: 'var(--space-md)' }}>
-              <span style={{ color: 'var(--neutral)' }}>{isLogin ? 'NEW OPERATOR?' : 'EXISTING CREDENTIALS?'}</span>
-              <button type="button" onClick={() => setMode(isLogin ? 'signup' : 'login')} style={{ background: 'none', border: 'none', color: 'var(--on-surface)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, textTransform: 'uppercase', letterSpacing: '0.05em', fontFamily: 'var(--font-mono)', fontSize: 10 }}>
+              <span style={{ color: 'var(--on-surface-variant)' }}>{isLogin ? 'NEW OPERATOR?' : 'EXISTING CREDENTIALS?'}</span>
+              <button
+                type="button"
+                onClick={() => setMode(isLogin ? 'signup' : 'login')}
+                style={{ background: 'none', border: 'none', color: 'var(--on-surface)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, textTransform: 'uppercase', letterSpacing: '0.05em', fontFamily: 'var(--font-mono)', fontSize: 10 }}
+              >
                 {isLogin ? 'REQUEST PROVISIONING' : 'SIGN IN TO TERMINAL'}
                 <span className="material-symbols-outlined" style={{ fontSize: 14 }}>arrow_right_alt</span>
               </button>
