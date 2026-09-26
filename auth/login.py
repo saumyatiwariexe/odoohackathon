@@ -27,15 +27,12 @@ def login(email: str, password: str):
     conn = get_db_connection()
     try:
         with conn.cursor() as cur:
-            cur.execute("SELECT id, email, password_hash, role, is_active FROM users WHERE email = %s", (email,))
+            cur.execute("SELECT id, email, password_hash, role FROM users WHERE email = %s", (email,))
             user = cur.fetchone()
             
         if not user:
             # Generic error to prevent enumeration
             raise HTTPException(status_code=401, detail="Invalid email or password")
-            
-        if not user["is_active"]:
-            raise HTTPException(status_code=403, detail="Account deactivated")
             
         stored_hash = user["password_hash"]
         
