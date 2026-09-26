@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 
 const fetchKPIs = async () => {
   const token = localStorage.getItem('token');
-  const res = await axios.get('http://localhost:8000/api/dashboard/kpis', {
+  const res = await axios.get('http://localhost:3000/api/dashboard/kpis', {
     headers: { Authorization: `Bearer ${token}` }
   });
   return res.data;
