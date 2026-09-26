@@ -200,9 +200,9 @@ def validate_operation(move_id: str, data: MoveValidate, db=Depends(get_db)):
                 if src_usage == 'internal':
                     cur.execute("""
                         INSERT INTO stock_quants (product_id, location_id, on_hand_qty)
-                        VALUES (%s, %s, %s)
+                        VALUES (%s, %s, 0)
                         ON CONFLICT (product_id, location_id)
-                        DO UPDATE SET on_hand_qty = stock_quants.on_hand_qty + EXCLUDED.on_hand_qty,
+                        DO UPDATE SET on_hand_qty = stock_quants.on_hand_qty + %s,
                                       updated_at = now()
                         RETURNING on_hand_qty
                     """, (line.product_id, move["source_location_id"], -line.done_qty))

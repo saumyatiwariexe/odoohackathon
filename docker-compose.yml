@@ -8,6 +8,8 @@ services:
       - .env
     environment:
       - DATABASE_URL=postgresql://stocksense:localpass@db:5432/stocksense
+    volumes:
+      - .:/app
     depends_on:
       db:
         condition: service_healthy
