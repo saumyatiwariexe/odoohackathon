@@ -39,3 +39,4 @@ Thumbs.db
 # ── Agent tooling (hidden from repo) ──────────────────
 .agents/
 agent-manager.json
+ui_reference/
