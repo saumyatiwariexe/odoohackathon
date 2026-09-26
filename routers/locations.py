@@ -19,7 +19,7 @@ def get_db():
 
 @router.get("/")
 def get_locations(usage: Optional[str] = None, db=Depends(get_db)):
-    query = "SELECT id, parent_id, name, short_code, usage, created_at FROM locations WHERE is_active = TRUE"
+    query = "SELECT id, warehouse_id, name, short_code, usage, created_at FROM locations WHERE is_active = TRUE"
     params = []
     
     if usage:
