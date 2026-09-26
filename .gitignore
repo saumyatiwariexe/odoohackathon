@@ -1,0 +1,30 @@
+# dependencies
+node_modules/
+
+# lock files (committed separately per team preference)
+package-lock.json
+pnpm-lock.yaml
+bun.lock
+yarn.lock
+
+# env files
+.env
+.env.local
+.env.*.local
+
+# build output
+dist/
+build/
+.next/
+
+# editor
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# agent tooling (hidden from repo)
+.agents/
+agent-manager.json
