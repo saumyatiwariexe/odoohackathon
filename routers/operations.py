@@ -43,7 +43,7 @@ class MoveValidate(BaseModel):
 # --- Routes ---
 
 @router.get("/")
-def get_operations(move_type: Optional[str] = None, status: Optional[str] = None, db=Depends(get_db)):
+def get_operations(move_type: Optional[str] = None, status: Optional[str] = None, location_id: Optional[str] = None, category_id: Optional[str] = None, db=Depends(get_db)):
     query = """
         SELECT m.id, m.reference, m.move_type, m.status, m.contact, m.scheduled_date, 
                l_src.name as source_location, l_dest.name as dest_location
@@ -59,12 +59,50 @@ def get_operations(move_type: Optional[str] = None, status: Optional[str] = None
     if status:
         query += " AND m.status = %s"
         params.append(status)
+    if location_id:
+        query += " AND (m.source_location_id = %s OR m.dest_location_id = %s)"
+        params.extend([location_id, location_id])
+    if category_id:
+        query += """ AND EXISTS (
+            SELECT 1 FROM stock_move_lines sml 
+            JOIN products p ON sml.product_id = p.id 
+            WHERE sml.stock_move_id = m.id AND p.category_id = %s
+        )"""
+        params.append(category_id)
         
     query += " ORDER BY m.created_at DESC"
     
     with db.cursor() as cur:
         cur.execute(query, params)
         return cur.fetchall()
+
+@router.get("/{move_id}")
+def get_operation(move_id: str, db=Depends(get_db)):
+    with db.cursor() as cur:
+        # Fetch move details
+        cur.execute("""
+            SELECT m.id, m.reference, m.move_type, m.status, m.contact, m.notes, m.scheduled_date,
+                   l_src.name as source_location, l_dest.name as dest_location
+            FROM stock_moves m
+            JOIN locations l_src ON m.source_location_id = l_src.id
+            JOIN locations l_dest ON m.dest_location_id = l_dest.id
+            WHERE m.id = %s
+        """, (move_id,))
+        move = cur.fetchone()
+        
+        if not move:
+            raise HTTPException(status_code=404, detail="Operation not found")
+            
+        # Fetch lines
+        cur.execute("""
+            SELECT l.id, l.product_id, p.name as product_name, p.sku, l.expected_qty, l.done_qty
+            FROM stock_move_lines l
+            JOIN products p ON l.product_id = p.id
+            WHERE l.stock_move_id = %s
+        """, (move_id,))
+        move["lines"] = cur.fetchall()
+        
+        return move
 
 @router.post("/")
 def create_operation(move: MoveCreate, db=Depends(get_db)):

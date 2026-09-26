@@ -19,11 +19,18 @@ def get_db():
 
 @router.get("/")
 def get_locations(usage: Optional[str] = None, db=Depends(get_db)):
-    query = "SELECT id, warehouse_id, name, short_code, usage, created_at FROM locations WHERE is_active = TRUE"
+    query = """
+        SELECT l.id, l.warehouse_id, 
+               COALESCE(w.short_code || '/' || l.name, l.name) as name, 
+               l.short_code, l.usage, l.created_at 
+        FROM locations l
+        LEFT JOIN warehouses w ON l.warehouse_id = w.id
+        WHERE l.is_active = TRUE
+    """
     params = []
     
     if usage:
-        query += " AND usage = %s"
+        query += " AND l.usage = %s"
         params.append(usage)
         
     query += " ORDER BY name"

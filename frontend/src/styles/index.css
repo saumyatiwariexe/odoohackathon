@@ -260,3 +260,73 @@ input {
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
 }
+
+/* 
+===========================================
+  PREMIUM DASHBOARD STYLES (GLASSMORPHISM)
+===========================================
+*/
+
+.dashboard-container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.kpi-card {
+  background: rgba(26, 29, 39, 0.4);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 100%);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.kpi-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.kpi-title {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  z-index: 1;
+}
+
+.kpi-value {
+  font-size: var(--font-size-3xl);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+  z-index: 1;
+}
+
+/* Utilities used in dashboard */
+.mono {
+  font-family: 'JetBrains Mono', monospace, sans-serif;
+}
+.uppercase {
+  text-transform: uppercase;
+}
+.text-xs { font-size: 0.75rem; }
+.text-sm { font-size: 0.875rem; }
+.text-variant { color: var(--color-text-secondary); }
+.hover-row:hover { background-color: rgba(255,255,255,0.02); }

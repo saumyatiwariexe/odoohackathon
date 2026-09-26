@@ -41,14 +41,20 @@ def get_kpis(db=Depends(get_db)):
         """)
         stock_stats = cur.fetchone()
 
-        # 4, 5, 6. Pending Operations
+        # 4, 5, 6. Pending Operations Breakdown
         cur.execute("""
             SELECT 
-                COUNT(*) FILTER (WHERE move_type = 'receipt') as pending_receipts,
-                COUNT(*) FILTER (WHERE move_type = 'delivery') as pending_deliveries,
-                COUNT(*) FILTER (WHERE move_type = 'internal') as scheduled_transfers
+                COUNT(*) FILTER (WHERE move_type = 'receipt' AND status IN ('draft', 'waiting', 'ready')) as receipts_to_receive,
+                COUNT(*) FILTER (WHERE move_type = 'receipt' AND status != 'done' AND scheduled_date < CURRENT_DATE) as receipts_late,
+                COUNT(*) FILTER (WHERE move_type = 'receipt' AND status != 'done' AND scheduled_date >= CURRENT_DATE) as receipts_operations,
+                
+                COUNT(*) FILTER (WHERE move_type = 'delivery' AND status IN ('draft', 'waiting', 'ready')) as deliveries_to_deliver,
+                COUNT(*) FILTER (WHERE move_type = 'delivery' AND status != 'done' AND scheduled_date < CURRENT_DATE) as deliveries_late,
+                COUNT(*) FILTER (WHERE move_type = 'delivery' AND status = 'waiting') as deliveries_waiting,
+                COUNT(*) FILTER (WHERE move_type = 'delivery' AND status != 'done' AND scheduled_date >= CURRENT_DATE) as deliveries_operations,
+
+                COUNT(*) FILTER (WHERE move_type = 'internal' AND status IN ('draft', 'waiting', 'ready')) as scheduled_transfers
             FROM stock_moves
-            WHERE status IN ('draft', 'waiting', 'ready')
         """)
         ops_stats = cur.fetchone()
 
@@ -56,7 +62,16 @@ def get_kpis(db=Depends(get_db)):
             "total_products": total_products,
             "low_stock": stock_stats["low_stock"],
             "out_of_stock": stock_stats["out_of_stock"],
-            "pending_receipts": ops_stats["pending_receipts"],
-            "pending_deliveries": ops_stats["pending_deliveries"],
-            "scheduled_transfers": ops_stats["scheduled_transfers"]
+            "scheduled_transfers": ops_stats["scheduled_transfers"],
+            "receipts": {
+                "to_receive": ops_stats["receipts_to_receive"],
+                "late": ops_stats["receipts_late"],
+                "operations": ops_stats["receipts_operations"]
+            },
+            "deliveries": {
+                "to_deliver": ops_stats["deliveries_to_deliver"],
+                "late": ops_stats["deliveries_late"],
+                "waiting": ops_stats["deliveries_waiting"],
+                "operations": ops_stats["deliveries_operations"]
+            }
         }
