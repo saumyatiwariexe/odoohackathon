@@ -1,30 +1,41 @@
-# dependencies
+# ── Python ────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+.venv/
+venv/
+env/
+
+# ── Node / JS ─────────────────────────────────────────
 node_modules/
 
-# lock files (committed separately per team preference)
+# lock files
 package-lock.json
 pnpm-lock.yaml
 bun.lock
 yarn.lock
 
-# env files
+# ── Environment ───────────────────────────────────────
 .env
 .env.local
 .env.*.local
 
-# build output
+# ── Build output ──────────────────────────────────────
 dist/
 build/
 .next/
 
-# editor
+# ── Editor ────────────────────────────────────────────
 .vscode/
 .idea/
 
-# OS
+# ── OS ────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
 
-# agent tooling (hidden from repo)
+# ── Agent tooling (hidden from repo) ──────────────────
 .agents/
 agent-manager.json
